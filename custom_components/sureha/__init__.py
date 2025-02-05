@@ -35,8 +35,6 @@ from .const import (
     SURE_API_TIMEOUT,
     SURE_BATT_VOLTAGE_FULL,
     SURE_BATT_VOLTAGE_LOW,
-    ATTR_UPDATE_INTERVAL,
-    DEFAULT_UPDATE_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -118,15 +116,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         except SurePetcareError as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
 
-    
-    update_interval = timedelta(seconds=entry.options.get(ATTR_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL))
-       spc.coordinator = DataUpdateCoordinator(
-          hass,
-          _LOGGER,
-          name="sureha_sensors",
-          update_method=async_update_data,
-          update_interval=update_interval,  # Usa la variabile `update_interval`
+    spc.coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name="sureha_sensors",
+        update_method=async_update_data,
+        update_interval=timedelta(seconds=150),
     )
+
     await spc.coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][SPC] = spc
