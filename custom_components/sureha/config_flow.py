@@ -20,6 +20,8 @@ from .const import (
     SURE_API_TIMEOUT,
     SURE_BATT_VOLTAGE_FULL,
     SURE_BATT_VOLTAGE_LOW,
+    ATTR_UPDATE_INTERVAL,  # Aggiungi questa costante
+    DEFAULT_UPDATE_INTERVAL, # Valore predefinito in secondi
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -130,6 +132,12 @@ class SureHAOptionsFlowHandler(config_entries.OptionsFlow):
                     ATTR_VOLTAGE_FULL, SURE_BATT_VOLTAGE_FULL
                 ),
             ): float,
+            vol.Optional(  # Aggiungi questa opzione
+                ATTR_UPDATE_INTERVAL,
+                default=self.config_entry.options.get(
+                    ATTR_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL # Usa il valore predefinito
+                ),
+            ): int, # Deve essere un intero (secondi)
         }
 
         return self.async_show_form(step_id="init", data_schema=vol.Schema(options))
