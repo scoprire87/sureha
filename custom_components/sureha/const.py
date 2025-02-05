@@ -27,3 +27,7 @@ ATTR_LOCK_STATE = "lock_state"
 SERVICE_PET_LOCATION = "set_pet_location"
 ATTR_PET_ID = "pet_id"
 ATTR_WHERE = "where"
+
+# Update interval
+ATTR_UPDATE_INTERVAL = "update_interval"  # Aggiungi questa linea
+DEFAULT_UPDATE_INTERVAL = 150  # Aggiungi questa linea (valore in secondi)
