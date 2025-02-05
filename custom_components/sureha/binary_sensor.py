@@ -1,6 +1,7 @@
 """Support for Sure PetCare Flaps/Pets binary sensors."""
 from __future__ import annotations
 
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
@@ -198,10 +199,23 @@ class Pet(SurePetcareBinarySensor):
         attrs: dict[str, Any] = {}
 
         if pet := self._coordinator.data[self._id]:
+            since_dt = datetime.fromisoformat(pet.location.since.replace("Z", "+00:00"))
+            now_dt = datetime.now(timezone.utc)
+            duration = now_dt - since_dt
+
+            days, remainder = divmod(int(duration.total_seconds()), 86400)  # Calculate days
+            hours, remainder = divmod(remainder, 3600)
+            minutes, _ = divmod(remainder, 60)
+
+            if days > 0:
+                formatted_duration = f"{days}d {hours:02}:{minutes:02}"  # Format with days
+            else:
+                formatted_duration = f"{hours:02}:{minutes:02}"
 
             attrs = {
                 "since": pet.location.since,
                 "where": pet.location.where,
+                "for": formatted_duration,
                 **pet.raw_data(),
             }
 

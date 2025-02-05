@@ -6,6 +6,7 @@ import logging
 import pprint
 import random
 from typing import Any, cast
+from datetime import datetime, timezone, timedelta
 
 from homeassistant.components.sensor import (
     SensorEntity,
@@ -382,8 +383,8 @@ class Battery(SurePetcareSensor):
 
         attrs = {}
 
-        if (device := cast(SurepyDevice, self._coordinator.data[self._id])) and (
-            state := device.raw_data().get("status")
+        if (device:= cast(SurepyDevice, self._coordinator.data[self._id])) and (
+            state:= device.raw_data().get("status")
         ):
             self._surepy_entity = device
 
@@ -393,6 +394,23 @@ class Battery(SurePetcareSensor):
                 "battery_level": device.battery_level,
                 ATTR_VOLTAGE: f"{voltage:.2f}",
                 f"{ATTR_VOLTAGE}_per_battery": f"{voltage / 4:.2f}",
+                **self._surepy_entity.raw_data() # include all data
             }
+
+            if hasattr(device, "location") and hasattr(device.location, "since"):
+                since_dt = datetime.fromisoformat(device.location.since.replace("Z", "+00:00"))
+                now_dt = datetime.now(timezone.utc)
+                duration = now_dt - since_dt
+
+                days, remainder = divmod(int(duration.total_seconds()), 86400)  # Calculate days
+                hours, remainder = divmod(remainder, 3600)
+                minutes, _ = divmod(remainder, 60)
+
+                if days > 0:
+                    formatted_duration = f"{days}d {hours:02}:{minutes:02}"  # Format with days
+                else:
+                    formatted_duration = f"{hours:02}:{minutes:02}"
+
+                attrs["for"] = formatted_duration
 
         return attrs
