@@ -88,7 +88,6 @@ class SurePetcareBinarySensor(CoordinatorEntity, BinarySensorEntity):
         type_name = self._surepy_entity.type.name.replace("_", " ").title()
 
         self._name: str = (
-            # cover edge case where a device has no name set
             self._surepy_entity.name
             if self._surepy_entity.name
             else f"Unnamed {type_name}"
@@ -164,7 +163,7 @@ class Hub(SurePetcareBinarySensor):
         hub: SureHub
         online: bool = False
 
-        if hub := self._coordinator.data[self._id]:
+        if hub := self._coordinator.data.get(self._id):
 
             self._attr_extra_state_attributes = {
                 "led_mode": int(hub.raw_data()["status"]["led_mode"]),
@@ -194,7 +193,7 @@ class Pet(SurePetcareBinarySensor):
         pet: SurePet
         attrs: dict[str, Any] = {}
 
-        if pet := self._coordinator.data[self._id]:
+        if pet := self._coordinator.data.get(self._id):
             since_dt = datetime.fromisoformat(pet.location.since.replace("Z", "+00:00"))
             now_dt = datetime.now(timezone.utc)
             duration = now_dt - since_dt
@@ -224,7 +223,8 @@ class Pet(SurePetcareBinarySensor):
         pet: SurePet
         inside: bool = False
 
-        if pet := self._coordinator.data[self._id]:
+        # .get(self._id) evita il KeyError se il gatto sparisce dai dati
+        if pet := self._coordinator.data.get(self._id):
             inside = bool(pet.location.where == Location.INSIDE)
 
         return inside
@@ -250,10 +250,9 @@ class DeviceConnectivity(SurePetcareBinarySensor):
         device: SurepyDevice
         attrs: dict[str, Any] = {}
 
-        if (device := self._coordinator.data[self._id]) and (
+        if (device := self._coordinator.data.get(self._id)) and (
             state := device.raw_data().get("status")
         ):
-            # Gestione sicura dei dati del segnale per evitare KeyError
             signal = state.get("signal", {})
             d_rssi = signal.get("device_rssi")
             h_rssi = signal.get("hub_rssi")
