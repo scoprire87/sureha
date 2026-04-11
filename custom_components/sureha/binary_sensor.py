@@ -89,7 +89,6 @@ class SurePetcareBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
         self._name: str = (
             # cover edge case where a device has no name set
-            # (dont know how to do this but people have managed to do it  ¯\_(ツ)_/¯)
             self._surepy_entity.name
             if self._surepy_entity.name
             else f"Unnamed {type_name}"
@@ -147,7 +146,7 @@ class SurePetcareBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
 
 class Hub(SurePetcareBinarySensor):
-    """Sure Petcare Pet."""
+    """Sure Petcare Hub."""
 
     def __init__(self, coordinator, _id: int, spc: SurePetcareAPI) -> None:
         """Initialize a Sure Petcare Hub."""
@@ -185,10 +184,7 @@ class Pet(SurePetcareBinarySensor):
 
         super().__init__(coordinator, _id, spc, BinarySensorDeviceClass.PRESENCE)
 
-        # explicit typing
         self._surepy_entity: SurePet
-
-        # picture of the pet that can be added via the sure app/website
         self._attr_entity_picture = self._surepy_entity.photo_url
 
     @property
@@ -203,12 +199,12 @@ class Pet(SurePetcareBinarySensor):
             now_dt = datetime.now(timezone.utc)
             duration = now_dt - since_dt
 
-            days, remainder = divmod(int(duration.total_seconds()), 86400)  # Calculate days
+            days, remainder = divmod(int(duration.total_seconds()), 86400)
             hours, remainder = divmod(remainder, 3600)
             minutes, _ = divmod(remainder, 60)
 
             if days > 0:
-                formatted_duration = f"{days}d {hours:02}:{minutes:02}"  # Format with days
+                formatted_duration = f"{days}d {hours:02}:{minutes:02}"
             else:
                 formatted_duration = f"{hours:02}:{minutes:02}"
 
@@ -257,14 +253,19 @@ class DeviceConnectivity(SurePetcareBinarySensor):
         if (device := self._coordinator.data[self._id]) and (
             state := device.raw_data().get("status")
         ):
+            # Gestione sicura dei dati del segnale per evitare KeyError
+            signal = state.get("signal", {})
+            d_rssi = signal.get("device_rssi")
+            h_rssi = signal.get("hub_rssi")
+
             attrs = {
-                "device_rssi": f'{state["signal"]["device_rssi"]:.2f}',
-                "hub_rssi": f'{state["signal"]["hub_rssi"]:.2f}',
+                "device_rssi": f"{float(d_rssi):.2f}" if d_rssi is not None else "N/A",
+                "hub_rssi": f"{float(h_rssi):.2f}" if h_rssi is not None else "N/A",
             }
 
         return attrs
 
     @property
     def is_on(self) -> bool:
-        """Return True if the pet is at home."""
+        """Return True if the connectivity is active."""
         return bool(self.extra_state_attributes)
