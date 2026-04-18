@@ -107,3 +107,115 @@ service: sureha.set_pet_location
 data:
   pet_id: 31337
   where: Inside
+```
+
+### `sureha.set_lock_state`
+
+ This service call allows you to update the lock state of a flap.
+  
+ Data needed:<br>
+   - `flap_id` = this is the surepetcare id for the flap you want to change.<br>
+   - `lock_state` = locked, unlocked, in_only, out_only
+  
+ Example:
+ ```yaml
+service: sureha.set_lock_state
+data:
+  flap_id: 123456
+  lock_state: locked
+```
+
+
+## Useful stuff
+
+The following script and button card code was created by xbmcnut to set pets location to inside:
+```yaml
+script:
+  set_kobe_inside:
+    alias: 'Set Kobe Inside'
+    sequence:
+      - service: sureha.set_pet_location
+        data:
+          pet_id: '123456' #Kobe's Code
+          where: Inside      
+```
+
+Button card code:
+```yaml
+type: custom:button-card
+entity: binary_sensor.pet_kobe
+icon: mdi:cat
+layout: icon_name_state
+show_name: false
+show_state: true
+styles:
+  icon:
+    - color: >
+        [[[ if (states['binary_sensor.pet_kobe'].state === 'on') return "green";
+        return "red"; ]]]
+tap_action:
+  action: more-info
+hold_action:
+  action: call-service
+  service: script.set_kobe_inside
+```
+
+The following script was created by sasgoose to toggle the location of a pet:
+
+```yaml
+script:
+  toggle_thorin_location:
+      alias: 'Toggle Thorin location'
+      sequence:
+        choose:
+        - conditions:
+            - condition: state
+              entity_id: binary_sensor.pet_thorin_2
+              attribute: where
+              state: 1
+          sequence:
+            - service: sureha.set_pet_location
+              data:
+                pet_id: '123456' # Thorin's pet id
+                where: Outside
+        - conditions:
+            - condition: state
+              entity_id: binary_sensor.pet_thorin_2
+              attribute: where
+              state: 2
+          sequence:
+            - service: sureha.set_pet_location
+              data:
+                pet_id: '123456' # Thorin's pet id
+                where: Inside
+                
+```
+
+## Debugging
+
+Enable the debug logging in `configuration.yaml` if something does not work as expected:
+
+```yaml
+# logging
+logger:
+  default: info
+  logs:
+    surepy: debug
+    custom_components.sureha: debug
+    custom_components.sureha.binary_sensor: debug
+    custom_components.sureha.sensor: debug
+```
+
+---
+
+## Credits & Acknowledgements 🐾
+
+This repository is maintained at **[scoprire87/sureha](https://github.com/scoprire87/sureha)**.
+
+Huge thanks to **Ben Ervin (benleb)** for the original `surepy` library and the initial development of the custom integration that made this possible.
+
+| Name | Developer | Description |
+|---|---|---|
+| **[SureHA](https://github.com/scoprire87/sureha)** | [@scoprire87](https://github.com/scoprire87) | This Custom Home Assistant Integration. |
+| **[surepy](https://github.com/benleb/surepy)** | [@benleb](https://github.com/benleb) | Python Library to interact with the API of Sure Petcare. |
+| **[Official HA Integration](https://www.home-assistant.io/integrations/surepetcare)** | Home Assistant Core | Official (but limited) Home Assistant Integration. |
